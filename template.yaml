@@ -8,34 +8,40 @@ Description: >
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
-    Timeout: 3
+    Timeout: 90
 
 Resources:
-  HelloWorldFunction:
+  NJBuswatcherXMLFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
-      CodeUri: hello_world/
+      CodeUri: njbuswatcher_xml/
       Handler: app.lambda_handler
       Runtime: python3.9
       Architectures:
         - x86_64
       Events:
-        HelloWorld:
+        NJBuswatcherXML:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
-            Path: /hello
+            Path: /njbuswatcher_xml
             Method: get
+      Environment:
+        Variables:
+          TZ: "America/New_York"
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: 'arn:aws:secretsmanager:us-east-1:870747888580:secret:LambdaDeveloperKeys-Mubc5G'
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
   # Find out more about other implicit resources you can reference within SAM
   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
-  HelloWorldApi:
-    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
+  NJBuswatcherXMLApi:
+    Description: "API Gateway endpoint URL for Prod stage for NJBuswatcherXML function"
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
-  HelloWorldFunction:
-    Description: "Hello World Lambda Function ARN"
-    Value: !GetAtt HelloWorldFunction.Arn
-  HelloWorldFunctionIamRole:
-    Description: "Implicit IAM Role created for Hello World function"
-    Value: !GetAtt HelloWorldFunctionRole.Arn
+  NJBuswatcherXMLFunction:
+    Description: "NJBuswatcherXML Lambda Function ARN"
+    Value: !GetAtt NJBuswatcherXMLFunction.Arn
+  NJBuswatcherXMLFunctionIamRole:
+    Description: "Implicit IAM Role created for NJBuswatcherXML function"
+    Value: !GetAtt NJBuswatcherXMLFunctionRole.Arn
