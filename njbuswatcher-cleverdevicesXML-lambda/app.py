@@ -1,4 +1,5 @@
 import json
+from secret_helper import get_secret
 from NJTransitAPI import get_xml_data, parse_xml_getBusesForRouteAll
 import pandas as pd
 import boto3
@@ -10,37 +11,55 @@ aws_secret_access_key="HodS+0I/fM8HhOXTVrWBMgIxGoLKja7bnzfn5f73"
 
 # S3 settings
 aws_region_name='us-east-2'
-aws_bucket_name='bus-observatory' # data will be stored in a systemID bucket under this
+aws_bucket_name='bus-observatory' # data will be stored in a system_id bucket under this
 
 
 def lambda_handler(event, context):
     
-    # construct url from passed system_id request (no underscores for S3 bucket names)
-    # call the function with the keyword args http://aws.url/-------?systemID=nyct-mta-bus  
-    # systemID = event['queryStringParameters']['systemID']
-    systemID = "njtransit_bus"
+    ################################################################## 
+    # configuration
+    ################################################################## 
     
-    # fetch XML positions
-    # print(f"{dt.datetime.now()}\t Fetching buses from {systemID}")
+    # aws
+    aws_bucket_name="busobservatory"
+    aws_region_name="us-east-1"
+    aws_secret_name="LambdaDeveloperKeys"
+    aws_access_key_id = get_secret(aws_secret_name,aws_region_name)['aws_access_key_id']
+    aws_secret_access_key = get_secret(aws_secret_name,aws_region_name)['aws_secret_access_key']
+    
+    # system to track
+    # store api key in secret api_key_{system_id}
+    # e.g. api_key_nyct_mta_bus_siri
+    system_id="njtransit_bus"
+
+    ################################################################## 
+    # fetch data
+    ##################################################################   
+ 
     data, fetch_timestamp = get_xml_data('nj','all_buses')
 
-    # convert feed (list of bus object instances) to a dataframe
-    # https://stackoverflow.com/questions/47623014/converting-a-list-of-objects-to-a-pandas-dataframe
+    ################################################################## 
+    # parse data
+    ##################################################################
+
     positions = pd.DataFrame([vars(bus) for bus in parse_xml_getBusesForRouteAll(data)])
     positions['timestamp'] = fetch_timestamp
     positions = positions.drop(['name','bus'], axis=1) 
     positions[["lat", "lon"]] = positions[["lat", "lon"]].apply(pd.to_numeric)
-    # print(f"{fetch_timestamp}\t Fetched {len(positions)} buses from {systemID}")
-    # print(f"{fetch_timestamp}\t Converted {len(positions)} buses into dataframe of shape {positions.shape}")
-      
+
+    ################################################################## 
+    # dump S3 as parquet
+    ##################################################################   
+          
     # dump to instance ephemeral storage 
-    filename=f"{systemID}_{fetch_timestamp}.parquet".replace(" ", "_").replace(":", "_")
+    filename=f"{system_id}_{fetch_timestamp}.parquet".replace(" ", "_").replace(":", "_")
+    
     # times'ms' per https://stackoverflow.com/questions/63194941/athena-returns-wrong-values-for-timestamp-fields-in-parquet-files
     positions.to_parquet(f"/tmp/{filename}", times='int96')
 
     # upload dump_file to S3
     source_path=f"/tmp/{filename}" 
-    remote_path=f"{systemID}/{filename}"  
+    remote_path=f"{system_id}/{filename}"  
     session = boto3.Session(
         region_name=aws_region_name,
         aws_access_key_id=aws_access_key_id,

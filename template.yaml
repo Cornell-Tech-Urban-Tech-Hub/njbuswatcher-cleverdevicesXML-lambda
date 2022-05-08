@@ -14,8 +14,9 @@ Resources:
   NJBuswatcherXMLFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
-      CodeUri: njbuswatcher_xml/
+      CodeUri: njbuswatcher-cleverdevicesXML-lambda/
       Handler: app.lambda_handler
+      MemorySize: 512
       Runtime: python3.9
       Architectures:
         - x86_64
