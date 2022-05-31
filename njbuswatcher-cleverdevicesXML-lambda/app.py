@@ -1,13 +1,9 @@
 import json
-from secret_helper import get_secret
 from NJTransitAPI import get_xml_data, parse_xml_getBusesForRouteAll
 import pandas as pd
 import boto3
 import datetime as dt
 
-# ARN buswatcher credentials -- verified work on desktop using below code
-aws_access_key_id="AKIA2HT76ZARVCBKVT2E"
-aws_secret_access_key="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"
 
 # S3 settings
 aws_region_name='us-east-2'
@@ -23,9 +19,9 @@ def lambda_handler(event, context):
     # aws
     aws_bucket_name="busobservatory"
     aws_region_name="us-east-1"
-    aws_secret_name="LambdaDeveloperKeys"
-    aws_access_key_id = get_secret(aws_secret_name,aws_region_name)['aws_access_key_id']
-    aws_secret_access_key = get_secret(aws_secret_name,aws_region_name)['aws_secret_access_key']
+    # aws_secret_name="LambdaDeveloperKeys"
+    # aws_access_key_id = get_secret(aws_secret_name,aws_region_name)['aws_access_key_id']
+    # aws_secret_access_key = get_secret(aws_secret_name,aws_region_name)['aws_secret_access_key']
     
     # system to track
     # store api key in secret api_key_{system_id}
@@ -59,15 +55,16 @@ def lambda_handler(event, context):
 
     # upload dump_file to S3
     source_path=f"/tmp/{filename}" 
-    remote_path=f"{system_id}/{filename}"  
-    session = boto3.Session(
-        region_name=aws_region_name,
-        aws_access_key_id=aws_access_key_id,
-        aws_secret_access_key=aws_secret_access_key)
+    remote_path=f"{system_id}/{filename}"
+    session = boto3.Session(region_name=aws_region_name)
+    # session = boto3.Session(
+    #     region_name=aws_region_name,
+    #     aws_access_key_id=aws_access_key_id,
+    #     aws_secret_access_key=aws_secret_access_key)
     s3 = session.resource('s3')
     result = s3.Bucket(aws_bucket_name).upload_file(source_path,remote_path)
-    outpath = f"s3://{aws_bucket_name}/{remote_path}"
-    outmessage = f"lambda-buswatcher-acquire-gtfs-realtime: Dumped {len(positions)} records to {outpath}"
+    outpath = f"s3://{aws_bucket_name}/{remote_path}" 
+    outmessage = f"njbuswatcher-cleverdevicesXML-lambda: Dumped {len(positions)} records to {outpath}"
 
     return {
         "statusCode": 200,
