@@ -3,7 +3,7 @@ from NJTransitAPI import get_xml_data, parse_xml_getBusesForRouteAll
 import pandas as pd
 import boto3
 import datetime as dt
-
+import os
 
 # S3 settings
 aws_region_name='us-east-2'
@@ -65,6 +65,12 @@ def lambda_handler(event, context):
     result = s3.Bucket(aws_bucket_name).upload_file(source_path,remote_path)
     outpath = f"s3://{aws_bucket_name}/{remote_path}" 
     outmessage = f"njbuswatcher-cleverdevicesXML-lambda: Dumped {len(positions)} records to {outpath}"
+    
+    # clean up /tmp
+    try:
+        os.remove(source_path)
+    except:
+        pass
 
     return {
         "statusCode": 200,
